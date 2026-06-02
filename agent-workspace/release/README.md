@@ -15,7 +15,7 @@ Use this domain when updating the public README, packaging the skill zip, or mai
 The README points users to a fixed zip filename:
 
 ```text
-https://lf3-static.bytednsdoc.com/obj/eden-cn/nuhpsvhpebf/jvw_uvpabsvz_ph_ryhs/ljhwZthlaukjlkulzlp/AISolutionSkills/attachment-to-doc-local.zip
+https://lf3-static.bytednsdoc.com/obj/eden-cn/nulwvhojnuhog/jvw_uvpabsvz_ph_ryhs/ljhwZthlaukjlkulzlp/AISolutionSkills/attachment-to-doc-local.zip
 ```
 
 Keep the filename stable. To publish a new version, rebuild the zip from the repository contents and upload it with the same filename so existing users download the latest package from the same URL.
