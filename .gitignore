@@ -1,0 +1,31 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+
+# Generated local outputs
+output/
+outputs/
+tmp/
+*.log
+
+# Large local media/model artifacts
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.mp3
+*.wav
+*.m4a
+*.flac
+*.pdf
+*.ppt
+*.pptx
+*.doc
+*.docx
+*.xls
+*.xlsx
