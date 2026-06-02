@@ -62,7 +62,7 @@ attachment-to-doc-local/
 始终下载最新版本：
 
 ```text
-https://lf3-static.bytednsdoc.com/obj/eden-cn/nulwvhojnuhog/jvw_uvpabsvz_ph_ryhs/ljhwZthlaukjlkulzlp/AISolutionSkills/attachment-to-doc-local.zip
+https://lf3-static.bytednsdoc.com/obj/eden-cn/jvw_uvpabsvz_ph_ryhs/ljhwZthlaukjlkulzlp/AISolutionSkills/attachment-to-doc-local.zip
 ```
 
 将本目录放到 Codex/Agent 的 skills 目录中，例如：
