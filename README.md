@@ -25,6 +25,8 @@
 
 ```text
 attachment-to-doc-local/
+├── AGENTS.md
+├── agent-workspace/
 ├── SKILL.md
 └── scripts/
     ├── convert-office.sh
@@ -36,6 +38,8 @@ attachment-to-doc-local/
 ```
 
 `SKILL.md` 是 Agent 读取的技能说明，包含触发条件、完整工作流和排版策略。`scripts/` 中的脚本负责稳定执行本地预处理任务。
+
+面向 Agent 的仓库导航见 [AGENTS.md](./AGENTS.md) 和 [agent-workspace/INDEX.md](./agent-workspace/INDEX.md)。
 
 ## 依赖
 
