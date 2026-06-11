@@ -1,83 +1,56 @@
-# attachment-to-doc-local
+# file2doc
 
-`attachment-to-doc-local` 是一个面向 Codex/Agent 的飞书技能，用于把常见附件和飞书链接整理成结构化、排版良好的飞书云文档。
+`file2doc` 是一个面向 Codex/Agent 的飞书技能，用于把离线附件通过线上 File2Doc 服务解析成 Agent 友好的 Markdown、媒体索引、缩略图、页面截图、视频帧和转写结果，再整理成飞书云文档。
 
-它的核心特点是本地优先：PDF 渲染、Office 转换、视频抽帧、音视频转写、Excel 读取等预处理都在本机完成，适合隐私敏感、离线处理或高频批量转换场景。
+调用方只需要能访问 File2Doc 服务并上传文件流。
+
+本仓库名为 `file2doc-skill`；发布给 Agent 安装的技能目录名为 `file2doc`。
 
 ## 能做什么
 
-- 将 PDF、PPT、Word 渲染为页面截图，并辅助整理成图文并茂的飞书文档。
-- 从视频中提取关键帧，并使用本地 ASR 生成转写文本，适合沉淀培训视频、演示录屏和教程文档。
-- 将会议录音、访谈音频等转写并整理成文档。
-- 读取 Excel/CSV，输出 Markdown 表格，方便生成报告或数据说明。
-- 解析飞书文档、电子表格、多维表格和知识库链接，并重新组织为新的飞书云文档。
-- 指导 Agent 使用飞书文档高级排版能力，例如 callout、分栏、表格和画板。
+- 将 PDF、PPT、Word 等文档类附件解析成 Markdown，并按需获取缩略图和关键页面截图。
+- 将视频解析成 Markdown、转写、时间线和代表性视频帧。
+- 将音频解析成转写文本、摘要基础材料和可排版 Markdown。
+- 将 Excel/CSV 解析成 Markdown 表格或结构化内容；复杂工作簿需要人工复核。
+- 指导 Agent 使用飞书文档能力继续创建、改写和排版云文档。
 
 ## 适用场景
 
 - 把报告 PDF 转成可编辑、可评论、可继续补充的飞书文档。
 - 把产品演示视频整理成图文教程。
 - 把会议录音整理成纪要、摘要或行动项文档。
-- 把 Excel 数据表整理成带结论的业务报告。
-- 把已有飞书文档或表格重新排版成更适合分享的云文档。
-
-## 文件结构
-
-```text
-attachment-to-doc-local/
-├── AGENTS.md
-├── agent-workspace/
-├── SKILL.md
-└── scripts/
-    ├── convert-office.sh
-    ├── extract-video-frames.sh
-    ├── local-asr.py
-    ├── local-parse.py
-    ├── read-excel.py
-    └── render-pdf-pages.py
-```
-
-`SKILL.md` 是 Agent 读取的技能说明，包含触发条件、完整工作流和排版策略。`scripts/` 中的脚本负责稳定执行本地预处理任务。
-
-面向 Agent 的仓库导航见 [AGENTS.md](./AGENTS.md) 和 [agent-workspace/INDEX.md](./agent-workspace/INDEX.md)。
+- 把 PPT、Word 或 Excel 附件整理成结构化业务材料。
+- 让远程 VM / K8S / Agent 环境通过文件流上传完成解析。
 
 ## 依赖
 
-基础依赖：
+默认工作流只需要：
 
-- `python3`
-- `ffmpeg`
-- 飞书 CLI 工具，并完成 user 或 bot 身份认证
-
-按文件类型可选依赖：
-
-- LibreOffice：用于 PPT、Word、RTF 等 Office 文件转 PDF。
-- `pymupdf`：用于 PDF 页面渲染，脚本可自动安装。
-- `openpyxl`：用于 Excel 读取，脚本可自动安装。
-- `sherpa-onnx` 和 Paraformer 中文模型：用于本地音视频转写，脚本可自动安装并下载模型。
-- `bytedance-lark-parser`：用于本地解析飞书在线文档、表格和多维表格。该依赖需要可访问对应安装源的环境；如果无法安装，飞书在线链接解析能力不可用，但本地附件处理能力不受影响。
+- `curl`
+- 可访问 File2Doc 服务的网络环境
+- File2Doc Bearer Token，由运行环境注入
+- 飞书 CLI、`lark-doc` 或 `lark-drive` 技能，用于最终创建和排版飞书云文档
 
 ## 安装
 
 始终下载最新版本：
 
 ```text
-https://lf3-static.bytednsdoc.com/obj/eden-cn/jvw_uvpabsvz_ph_ryhs/ljhwZthlaukjlkulzlp/AISolutionSkills/attachment-to-doc-local.zip
+https://lf3-static.bytednsdoc.com/obj/eden-cn/jvw_uvpabsvz_ph_ryhs/ljhwZthlaukjlkulzlp/AISolutionSkills/file2doc.zip
 ```
 
 将本目录放到 Codex/Agent 的 skills 目录中，例如：
 
 ```bash
 mkdir -p ~/.codex/skills
-cp -R attachment-to-doc-local ~/.codex/skills/
+cp -R file2doc ~/.codex/skills/
 ```
 
-确认系统依赖：
+配置 File2Doc 服务参数：
 
 ```bash
-command -v python3
-command -v ffmpeg
-command -v soffice || command -v libreoffice
+export FILE2DOC_BASE_URL="${FILE2DOC_BASE_URL:-https://api.prd.solutionsuite.cn/file2doc}"
+export FILE2DOC_BEARER_TOKEN="<从运行环境注入，不要写入文档或代码>"
 ```
 
 确认飞书 CLI 已登录：
@@ -90,41 +63,66 @@ lark-cli auth status --as user --format json
 
 ## 快速验证
 
-渲染 PDF 页面：
+上传离线文件：
 
 ```bash
-python3 scripts/render-pdf-pages.py report.pdf /tmp/report-pages --dpi 288
+SOURCE_FILE="./report.pdf"
+CONTENT_TYPE="application/pdf"
+BASE_URL="${FILE2DOC_BASE_URL:-https://api.prd.solutionsuite.cn/file2doc}"
+AUTH_HEADER=()
+if [ -n "${FILE2DOC_BEARER_TOKEN:-}" ]; then
+  AUTH_HEADER=(-H "Authorization: Bearer ${FILE2DOC_BEARER_TOKEN}")
+fi
+
+curl -sS -X POST "$BASE_URL/parse-jobs/upload" \
+  "${AUTH_HEADER[@]}" \
+  -F "file=@${SOURCE_FILE};type=${CONTENT_TYPE}" \
+  -F "parser_profile=agent" \
+  -F "retention=short" \
+  -o /tmp/file2doc-upload.json
 ```
 
-转换 Office 文件：
+轮询进度：
 
 ```bash
-bash scripts/convert-office.sh presentation.pptx /tmp/office-output
+JOB_ID="job_abc123"
+curl -sS "$BASE_URL/parse-jobs/$JOB_ID" "${AUTH_HEADER[@]}" \
+  -o /tmp/file2doc-job.json
 ```
 
-提取视频关键帧：
+终态包括：
+
+- `completed`
+- `completed_with_warnings`
+- `failed`
+
+获取 manifest：
 
 ```bash
-bash scripts/extract-video-frames.sh demo.mp4 /tmp/demo-frames 10
+curl -sS "$BASE_URL/parse-jobs/$JOB_ID/result" "${AUTH_HEADER[@]}" \
+  -o /tmp/file2doc-manifest.json
 ```
 
-本地音频转写：
+下载 Markdown 或媒体 artifact：
 
 ```bash
-python3 scripts/local-asr.py meeting.mp3
+ARTIFACT_ID="art_xxx"
+curl -sS "$BASE_URL/parse-jobs/$JOB_ID/artifacts/$ARTIFACT_ID" \
+  "${AUTH_HEADER[@]}" \
+  -o /tmp/file2doc-content.md
 ```
 
-读取 Excel：
+如需更高 DPI 的页面图，可按页重新生成：
 
 ```bash
-python3 scripts/read-excel.py data.xlsx --max-rows 100
+curl -sS -X POST "$BASE_URL/parse-jobs/$JOB_ID/assets/page-image" \
+  "${AUTH_HEADER[@]}" \
+  -H "Content-Type: application/json" \
+  -d '{"page": 3, "dpi": 216}' \
+  -o /tmp/file2doc-page-image.json
 ```
 
-解析飞书链接：
-
-```bash
-python3 scripts/local-parse.py "https://example.feishu.cn/docx/xxxx"
-```
+支持 DPI：`144`, `216`, `288`。默认优先使用 `144`，看不清时再按页请求更高 DPI。
 
 ## 使用方式
 
@@ -137,17 +135,23 @@ python3 scripts/local-parse.py "https://example.feishu.cn/docx/xxxx"
 帮我解析这个 Excel 生成报告
 ```
 
-Agent 会先根据输入类型调用对应脚本，得到页面截图、视频帧、转写文本或表格 Markdown，再通过飞书 CLI 创建和排版飞书云文档。
+Agent 的默认流程：
 
-## 本地版边界
+1. 确认输入是调用方机器上的离线文件。
+2. 通过 `POST /parse-jobs/upload` 上传文件流。
+3. 轮询 `GET /parse-jobs/{job_id}`，必要时读取 `GET /parse-jobs/{job_id}/events` 查看进度。
+4. 通过 `GET /parse-jobs/{job_id}/result` 获取 manifest。
+5. 使用 manifest 中的 `artifact_id` 下载 Markdown、缩略图、页面截图、视频帧或转写产物。
+6. 基于 Markdown 和媒体索引用飞书 CLI / `lark-doc` / `lark-drive` 创建或改写云文档。
 
-本技能强调本地处理，但仍有几个边界需要注意：
+## 边界
 
-- 首次音视频转写会下载 ASR 模型，约 223MB。
-- PPT、Word 转换依赖 LibreOffice 的渲染结果，复杂动画或特殊字体可能与原文件略有差异。
-- 飞书在线文档解析依赖额外 parser，外部环境可能无法安装。
+- 仅支持离线文件。网页 URL、飞书云文档 URL、网盘 URL 等需要先由上游 Agent 下载成文件。
+- `local_path` 指调用方机器上的路径；File2Doc 服务不会主动读取调用方文件系统。
+- 服务端缓存有有效期；结果过期后需要重新上传。
+- job `failed` 时应直接报告 `error.code` 和 `error.message`。
+- 缩略图用于快速理解，逐页截图和视频帧应按需下载，避免占用过多 Agent 上下文。
 - 最终创建、更新飞书云文档仍需要访问飞书开放平台 API。
-- 脚本会在首次运行时尝试安装 Python 依赖；生产或受控环境建议提前安装并固定依赖版本。
 
 ## Skill 触发范围
 
