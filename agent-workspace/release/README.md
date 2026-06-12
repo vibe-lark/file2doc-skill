@@ -14,7 +14,10 @@ The repository is named `file2doc-skill`. The released skill directory inside th
 
 ## Stable Download Link
 
-The README points users to a fixed zip filename:
+The README points users to a fixed CDN zip filename. Treat this as the primary
+installation link for users, especially in China. GitHub Release assets are only
+version records and fallback artifacts because they are often unreliable on
+domestic networks.
 
 ```text
 https://lf3-static.bytednsdoc.com/obj/eden-cn/jvw_uvpabsvz_ph_ryhs/ljhwZthlaukjlkulzlp/AISolutionSkills/file2doc.zip

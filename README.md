@@ -33,7 +33,9 @@
 
 ## 安装
 
-始终下载最新版本：
+始终优先使用国内 CDN 固定链接下载最新版本。不要把 GitHub Release
+asset 作为主要安装入口；GitHub Release 在国内网络环境下经常下载失败，
+仅作为版本记录和备用来源。
 
 ```text
 https://lf3-static.bytednsdoc.com/obj/eden-cn/jvw_uvpabsvz_ph_ryhs/ljhwZthlaukjlkulzlp/AISolutionSkills/file2doc.zip
