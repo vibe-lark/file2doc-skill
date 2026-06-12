@@ -28,7 +28,6 @@
 
 - `curl`
 - 可访问 File2Doc 服务的网络环境
-- File2Doc Bearer Token，由运行环境注入
 - 飞书 CLI、`lark-doc` 或 `lark-drive` 技能，用于最终创建和排版飞书云文档
 
 ## 安装
@@ -46,12 +45,13 @@ mkdir -p ~/.codex/skills
 cp -R file2doc ~/.codex/skills/
 ```
 
-配置 File2Doc 服务参数：
+配置 File2Doc 服务参数。默认入口是 AI-knowledge 代理，会在服务端注入 File2Doc 鉴权：
 
 ```bash
-export FILE2DOC_BASE_URL="${FILE2DOC_BASE_URL:-https://api.prd.solutionsuite.cn/file2doc}"
-export FILE2DOC_BEARER_TOKEN="<从运行环境注入，不要写入文档或代码>"
+export FILE2DOC_BASE_URL="${FILE2DOC_BASE_URL:-https://api.prd.solutionsuite.cn/api/file2doc}"
 ```
+
+直连内部 File2Doc 服务时，才额外设置 Bearer token；默认代理入口不要让 Agent 处理 token。
 
 确认飞书 CLI 已登录：
 
@@ -68,14 +68,9 @@ lark-cli auth status --as user --format json
 ```bash
 SOURCE_FILE="./report.pdf"
 CONTENT_TYPE="application/pdf"
-BASE_URL="${FILE2DOC_BASE_URL:-https://api.prd.solutionsuite.cn/file2doc}"
-AUTH_HEADER=()
-if [ -n "${FILE2DOC_BEARER_TOKEN:-}" ]; then
-  AUTH_HEADER=(-H "Authorization: Bearer ${FILE2DOC_BEARER_TOKEN}")
-fi
+BASE_URL="${FILE2DOC_BASE_URL:-https://api.prd.solutionsuite.cn/api/file2doc}"
 
 curl -sS -X POST "$BASE_URL/parse-jobs/upload" \
-  "${AUTH_HEADER[@]}" \
   -F "file=@${SOURCE_FILE};type=${CONTENT_TYPE}" \
   -F "parser_profile=agent" \
   -F "retention=short" \
@@ -86,7 +81,7 @@ curl -sS -X POST "$BASE_URL/parse-jobs/upload" \
 
 ```bash
 JOB_ID="job_abc123"
-curl -sS "$BASE_URL/parse-jobs/$JOB_ID" "${AUTH_HEADER[@]}" \
+curl -sS "$BASE_URL/parse-jobs/$JOB_ID" \
   -o /tmp/file2doc-job.json
 ```
 
@@ -99,7 +94,7 @@ curl -sS "$BASE_URL/parse-jobs/$JOB_ID" "${AUTH_HEADER[@]}" \
 获取 manifest：
 
 ```bash
-curl -sS "$BASE_URL/parse-jobs/$JOB_ID/result" "${AUTH_HEADER[@]}" \
+curl -sS "$BASE_URL/parse-jobs/$JOB_ID/result" \
   -o /tmp/file2doc-manifest.json
 ```
 
@@ -108,7 +103,6 @@ curl -sS "$BASE_URL/parse-jobs/$JOB_ID/result" "${AUTH_HEADER[@]}" \
 ```bash
 ARTIFACT_ID="art_xxx"
 curl -sS "$BASE_URL/parse-jobs/$JOB_ID/artifacts/$ARTIFACT_ID" \
-  "${AUTH_HEADER[@]}" \
   -o /tmp/file2doc-content.md
 ```
 
@@ -116,7 +110,6 @@ curl -sS "$BASE_URL/parse-jobs/$JOB_ID/artifacts/$ARTIFACT_ID" \
 
 ```bash
 curl -sS -X POST "$BASE_URL/parse-jobs/$JOB_ID/assets/page-image" \
-  "${AUTH_HEADER[@]}" \
   -H "Content-Type: application/json" \
   -d '{"page": 3, "dpi": 216}' \
   -o /tmp/file2doc-page-image.json
