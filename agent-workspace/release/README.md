@@ -10,7 +10,7 @@ The repository is named `file2doc-skill`. The released skill directory inside th
 
 - `README.md`: install instructions and stable download link.
 - `.gitignore`: excludes generated outputs, local media, local env files, and large artifacts.
-- `SKILL.md`: contents that must be included in the release zip.
+- `SKILL.md`: the required skill file that must be included in the release zip.
 
 ## Stable Download Link
 
@@ -37,16 +37,17 @@ Do not pass the visible CDN path as `dir`; the API maps team-space names to CDN 
 
 1. Ensure the working tree contains only intended changes.
 2. Build a zip that contains one top-level `file2doc/` directory.
-3. Exclude `.git`, virtualenvs, output directories, local media, and caches.
-4. Verify the archive includes `README.md`, `SKILL.md`, `.gitignore`, `CONTEXT.md`, `AGENTS.md`, and `agent-workspace/`.
-5. Download the CDN URL and compare checksums with the local zip.
+3. Include `SKILL.md`.
+4. Include only skill runtime resources if they exist: `agents/`, `scripts/`, `references/`, `assets/`.
+5. Exclude repository-maintenance files such as `.git`, `.gitignore`, `README.md`, `CONTEXT.md`, `AGENTS.md`, `agent-workspace/`, virtualenvs, output directories, local media, and caches.
+6. Download the CDN URL and compare checksums with the local zip.
 
 Example local build shape:
 
 ```bash
 rm -rf /tmp/file2doc-skill-release
 mkdir -p /tmp/file2doc-skill-release/file2doc
-rsync -a --exclude .git --exclude '.venv' --exclude tmp --exclude output --exclude outputs ./ /tmp/file2doc-skill-release/file2doc/
+cp SKILL.md /tmp/file2doc-skill-release/file2doc/
 cd /tmp/file2doc-skill-release
 zip -qr file2doc.zip file2doc
 unzip -l file2doc.zip
