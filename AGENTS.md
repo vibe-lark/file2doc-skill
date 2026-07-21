@@ -1,6 +1,6 @@
 # Agent Entry
 
-This `file2doc-skill` repository contains the `file2doc` Codex skill for converting offline attachments into well-structured Lark documents through the online File2Doc service.
+This repository contains the canonical `file2doc-http` Agent Skill for parsing offline attachments through the File2Doc service.
 
 ## Read Order
 

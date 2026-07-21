@@ -1,172 +1,30 @@
-# file2doc
+# file2doc-http
 
-`file2doc` 是一个面向 Codex/Agent 的飞书技能，用于把离线附件通过线上 File2Doc 服务解析成 Agent 友好的 Markdown、媒体索引、缩略图、页面截图、视频帧和转写结果，再整理成飞书云文档。
+`file2doc-http` 是 File2Doc 的官方 Agent Skill。它把本地 PDF、Office、音频或视频上传到 File2Doc，返回 Markdown、页面图、视频关键帧和带时间戳的转写结果。
 
-调用方只需要能访问 File2Doc 服务并上传文件流。
+生产入口：`https://file2doc.solutionsuite.cn`。公共网关会处理内部鉴权，用户不需要申请或配置 token。
 
-本仓库名为 `file2doc-skill`；发布给 Agent 安装的技能目录名为 `file2doc`。
+## 安装与更新
 
-## 能做什么
-
-- 将 PDF、PPT、Word 等文档类附件解析成 Markdown，并按需获取缩略图和关键页面截图。
-- 将 PDF 操作手册、系统教程整理成带关键截图的可执行 SOP。
-- 将视频解析成 Markdown、转写、时间线和代表性视频帧。
-- 将音频解析成转写文本、摘要基础材料和可排版 Markdown。
-- 将 Excel/CSV 解析成 Markdown 表格或结构化内容；复杂工作簿需要人工复核。
-- 指导 Agent 使用飞书文档能力继续创建、改写和排版云文档。
-
-## 适用场景
-
-- 把报告 PDF 转成可编辑、可评论、可继续补充的飞书文档。
-- 把产品演示视频整理成图文教程。
-- 把会议录音整理成纪要、摘要或行动项文档。
-- 把 PPT、Word 或 Excel 附件整理成结构化业务材料。
-- 让远程 VM / K8S / Agent 环境通过文件流上传完成解析。
-
-## 依赖
-
-默认工作流只需要：
-
-- `curl`
-- 可访问 File2Doc 服务的网络环境
-- 飞书 CLI、`lark-doc` 或 `lark-drive` 技能，用于最终创建和排版飞书云文档
-
-## 安装
-
-始终优先使用国内 CDN 固定链接下载最新版本。不要把 GitHub Release
-asset 作为主要安装入口；GitHub Release 在国内网络环境下经常下载失败，
-仅作为版本记录和备用来源。
-
-```text
-https://lf3-static.bytednsdoc.com/obj/eden-cn/jvw_uvpabsvz_ph_ryhs/ljhwZthlaukjlkulzlp/AISolutionSkills/file2doc.zip
-```
-
-将本目录放到 Codex/Agent 的 skills 目录中，例如：
+可访问 GitHub：
 
 ```bash
-mkdir -p ~/.codex/skills
-cp -R file2doc ~/.codex/skills/
+npx skills add vibe-lark/file2doc-skill --skill file2doc-http
+npx skills update file2doc-http
 ```
 
-配置 File2Doc 服务参数。默认入口是 AI-knowledge 代理，会在服务端注入 File2Doc 鉴权：
+中国大陆或无法访问 GitHub 的 Agent 沙箱：
 
 ```bash
-export FILE2DOC_BASE_URL="${FILE2DOC_BASE_URL:-https://api.prd.solutionsuite.cn/api/file2doc}"
+curl -fsSL https://file2doc.solutionsuite.cn/skills/file2doc-http/install.sh | sh
 ```
 
-直连内部 File2Doc 服务时，才额外设置 Bearer token；默认代理入口不要让 Agent 处理 token。
+Skill 每次任务开始会查询服务端版本。兼容更新只提示，不阻塞解析；不兼容版本会给出更新命令。
 
-确认飞书 CLI 已登录：
+## 验证
 
 ```bash
-lark-cli auth status --as user --format json
+curl -fsS 'https://file2doc.solutionsuite.cn/skills/file2doc-http/version.json?installed_version=0.1.21'
 ```
 
-如果你的环境使用其他飞书 CLI 命令名，请以实际安装的 CLI 为准。
-
-## 快速验证
-
-上传离线文件：
-
-```bash
-SOURCE_FILE="./report.pdf"
-CONTENT_TYPE="application/pdf"
-BASE_URL="${FILE2DOC_BASE_URL:-https://api.prd.solutionsuite.cn/api/file2doc}"
-
-curl -sS -X POST "$BASE_URL/parse-jobs/upload" \
-  -F "file=@${SOURCE_FILE};type=${CONTENT_TYPE}" \
-  -F "parser_profile=agent" \
-  -F "retention=short" \
-  -o /tmp/file2doc-upload.json
-```
-
-轮询进度：
-
-```bash
-JOB_ID="job_abc123"
-curl -sS "$BASE_URL/parse-jobs/$JOB_ID" \
-  -o /tmp/file2doc-job.json
-```
-
-终态包括：
-
-- `completed`
-- `completed_with_warnings`
-- `failed`
-
-获取 manifest：
-
-```bash
-curl -sS "$BASE_URL/parse-jobs/$JOB_ID/result" \
-  -o /tmp/file2doc-manifest.json
-```
-
-下载 Markdown 或媒体 artifact：
-
-```bash
-ARTIFACT_ID="art_xxx"
-curl -sS "$BASE_URL/parse-jobs/$JOB_ID/artifacts/$ARTIFACT_ID" \
-  -o /tmp/file2doc-content.md
-```
-
-如需更高 DPI 的页面图，可按页重新生成：
-
-```bash
-curl -sS -X POST "$BASE_URL/parse-jobs/$JOB_ID/assets/page-image" \
-  -H "Content-Type: application/json" \
-  -d '{"page": 3, "dpi": 216}' \
-  -o /tmp/file2doc-page-image.json
-```
-
-支持 DPI：`144`, `216`, `288`。默认优先使用 `144`，看不清时再按页请求更高 DPI。
-
-## 使用方式
-
-安装后，在 Agent 对话中直接描述目标即可触发该技能，例如：
-
-```text
-帮我把这个 PDF 转成飞书文档
-把这个培训视频整理成图文教程
-把这段会议录音整理成纪要
-帮我解析这个 Excel 生成报告
-```
-
-Agent 的默认流程：
-
-1. 确认输入是调用方机器上的离线文件。
-2. 通过 `POST /parse-jobs/upload` 上传文件流。
-3. 轮询 `GET /parse-jobs/{job_id}`，必要时读取 `GET /parse-jobs/{job_id}/events` 查看进度。
-4. 通过 `GET /parse-jobs/{job_id}/result` 获取 manifest。
-5. 使用 manifest 中的 `artifact_id` 下载 Markdown、缩略图、页面截图、视频帧或转写产物。
-6. 基于 Markdown 和媒体索引用飞书 CLI / `lark-doc` / `lark-drive` 创建或改写云文档。
-
-对于 PDF 操作手册、系统教程、培训材料，Agent 不能只把 Markdown 文本搬进飞书文档。必须读取 manifest 的 `media_index`，用缩略图筛选关键页，并把入口、表单填写、审批示例、结果查询等关键页面截图插入到对应步骤附近。
-
-交付前应自检：
-
-- 是否同时使用了 Markdown 和 manifest/media_index。
-- 操作手册是否插入了关键截图。
-- 重复页面标题是否改写为可执行步骤标题。
-- 是否清理了 PDF 断行、页眉页脚和重复噪声。
-
-## 边界
-
-- 仅支持离线文件。网页 URL、飞书云文档 URL、网盘 URL 等需要先由上游 Agent 下载成文件。
-- `local_path` 指调用方机器上的路径；File2Doc 服务不会主动读取调用方文件系统。
-- 服务端缓存有有效期；结果过期后需要重新上传。
-- job `failed` 时应直接报告 `error.code` 和 `error.message`。
-- 缩略图用于快速理解，逐页截图和视频帧应按需下载，避免占用过多 Agent 上下文。
-- 操作手册如果有页面图但最终文档没有图片，应先说明原因并征得用户认可。
-- 最终创建、更新飞书云文档仍需要访问飞书开放平台 API。
-
-## Skill 触发范围
-
-该技能适合在用户提出以下类型需求时使用：
-
-- “转成文档”
-- “把这个附件转成飞书文档”
-- “把 PDF/PPT/视频转成云文档”
-- “解析这个文件”
-- “附件转写”
-
-更完整的 Agent 执行流程和排版策略见 [SKILL.md](./SKILL.md)。
+完整执行契约见 [SKILL.md](./SKILL.md)。服务端源码见 [vibe-lark/file2doc-oss](https://github.com/vibe-lark/file2doc-oss)。
